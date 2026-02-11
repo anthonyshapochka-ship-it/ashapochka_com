@@ -166,3 +166,649 @@
             background: rgba(0,0,0,0.95);
             color: white;
             padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            max-width: 280px;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.2s;
+            z-index: 1000;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        
+        .tooltip-title {
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #818cf8;
+        }
+        
+        .tooltip-desc {
+            color: #a1a1aa;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        /* Прогресс */
+        .progress-ring {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 48px;
+            height: 48px;
+        }
+        
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 3;
+        }
+        
+        .progress-bg {
+            stroke: rgba(255,255,255,0.1);
+        }
+        
+        .progress-bar {
+            stroke: url(#gradient);
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            transition: stroke-dashoffset 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <div class="logo">🧠 NeuroFitness</div>
+            <div class="controls">
+                <button class="btn" onclick="expandAll()" id="btn-expand">+ Всё</button>
+                <button class="btn" onclick="collapseAll()" id="btn-collapse">− Свернуть</button>
+                <button class="btn" onclick="resetView()">⌂ Центр</button>
+            </div>
+        </div>
+        
+        <div id="tree-container">
+            <div class="legend">
+                <div class="legend-title">Выберите блок</div>
+                <div class="legend-grid">
+                    <div class="legend-item" onclick="focusBlock('body')" data-block="body">
+                        <div class="legend-dot" style="background: #f59e0b"></div>
+                        <span>Квест по телу</span>
+                    </div>
+                    <div class="legend-item" onclick="focusBlock('brain')" data-block="brain">
+                        <div class="legend-dot" style="background: #8b5cf6"></div>
+                        <span>Квест по мозгу</span>
+                    </div>
+                    <div class="legend-item" onclick="focusBlock('trainer')" data-block="trainer">
+                        <div class="legend-dot" style="background: #10b981"></div>
+                        <span>Тренер нового поколения</span>
+                    </div>
+                    <div class="legend-item" onclick="resetView()" data-block="all">
+                        <div class="legend-dot" style="background: linear-gradient(45deg, #f59e0b, #8b5cf6, #10b981)"></div>
+                        <span>Все блоки</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="tooltip" id="tooltip">
+        <div class="tooltip-title"></div>
+        <div class="tooltip-desc"></div>
+    </div>
+
+    <script>
+        // Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+        tg.enableClosingConfirmation();
+        
+        // Цветовая схема блоков
+        const colors = {
+            root: '#6366f1',
+            body: '#f59e0b',      // Оранжевый - тело
+            bodyLight: '#fbbf24',
+            brain: '#8b5cf6',     // Фиолетовый - мозг
+            brainLight: '#a78bfa',
+            trainer: '#10b981',   // Зеленый - тренер
+            trainerLight: '#34d399',
+            sub: '#64748b'        // Серый - подтемы
+        };
+        
+        // Структура данных из вашего HTML
+        const treeData = {
+            name: "NeuroFitness",
+            type: "root",
+            block: "root",
+            desc: "Образовательная платформа: тело, мозг, профессия",
+            children: [
+                {
+                    name: "Квест по телу",
+                    type: "body",
+                    block: "body",
+                    color: colors.body,
+                    desc: "Фасция, топография, анатомия движения",
+                    children: [
+                        {
+                            name: "Фасция и топография",
+                            type: "body",
+                            color: colors.bodyLight,
+                            desc: "Введение в фасциальный подход",
+                            children: [
+                                {
+                                    name: "Нижняя конечность",
+                                    type: "body",
+                                    children: [
+                                        { name: "ТБС, ягодицы и МТД", type: "body" },
+                                        { name: "Бедра и коленный сустав", type: "body" },
+                                        { name: "Стопа и паттерн шага", type: "body" }
+                                    ]
+                                },
+                                {
+                                    name: "Лопатка и верхняя конечность",
+                                    type: "body",
+                                    children: [
+                                        { name: "Фасциальные ленты, межмышечные перегородки", type: "body" },
+                                        { name: "Задняя часть руки, широчайшая", type: "body" }
+                                    ]
+                                },
+                                {
+                                    name: "Корпус",
+                                    type: "body",
+                                    children: [
+                                        { name: "Тазовое дно: фасциальный подход", type: "body" },
+                                        { name: "ГПФ - замковый камень", type: "body" },
+                                        { name: "Кубики, поперечка, диастаз", type: "body" },
+                                        { name: "Грудной отдел и дыхание", type: "body" },
+                                        { name: "Шея и вестибулярка", type: "body" }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            name: "Квест по фасции",
+                            type: "body",
+                            color: colors.body,
+                            desc: "Фундаментальные техники",
+                            children: [
+                                { name: "Фасциальный стретчинг", type: "body" },
+                                { name: "Фасциальные техники, ключевые зоны", type: "body" },
+                                { name: "Мобильность, продвинутые протоколы", type: "body" },
+                                { 
+                                    name: "Невральная фасция", 
+                                    type: "body",
+                                    children: [
+                                        { name: "Нейрофасциальный стретчинг", type: "body" }
+                                    ]
+                                },
+                                { name: "Миофасциальные цепи", type: "body" },
+                                { name: "Осанка: нейро-фасциальный подход", type: "body" },
+                                { name: "Фасциальное тейпирование", type: "body" },
+                                {
+                                    name: "Дополнительно",
+                                    type: "body",
+                                    children: [
+                                        { name: "Больше чем бег", type: "body" },
+                                        { name: "Фасция и неврология", type: "body" },
+                                        { name: "Ropeflow", type: "body" },
+                                        { name: "Функциональный тренинг", type: "body" },
+                                        { name: "Гири, инерционный тренинг", type: "body" }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    name: "Квест по мозгу",
+                    type: "brain",
+                    block: "brain",
+                    color: colors.brain,
+                    desc: "Нейроцентрический подход, нейрофитнес",
+                    children: [
+                        {
+                            name: "Нейроцентрический подход",
+                            type: "brain",
+                            color: colors.brainLight,
+                            desc: "Тренировки и принципы работы НС",
+                            children: [
+                                { name: "Нейроскрининг", type: "brain" },
+                                {
+                                    name: "Нейрофитнес",
+                                    type: "brain",
+                                    children: [
+                                        { name: "Модуль 1: Основы эмбодимента", type: "brain" },
+                                        { name: "Модуль 2: Экстероцепция и проприоцепция", type: "brain" },
+                                        { name: "Модуль 3: Интероцепция, вестибулярка и вагус", type: "brain" },
+                                        { name: "Online: Нейрофитнес основы", type: "brain" }
+                                    ]
+                                },
+                                { name: "Фасция и неврология (продвинутый)", type: "brain" },
+                                { name: "Ropeflow: тренировки со скакалкой", type: "brain" },
+                                { name: "Гимнастика 2.0", type: "brain" },
+                                { name: "Выносливость 2.0", type: "brain" }
+                            ]
+                        },
+                        {
+                            name: "Системы высшей иерархии",
+                            type: "brain",
+                            children: [
+                                { name: "Глаза, мозг, осанка", type: "brain" },
+                                { name: "Саккады, дофамин, вестибулярные рефлексы", type: "brain" },
+                                { name: "Больше чем бег: вестибулярный аппарат", type: "brain" }
+                            ]
+                        },
+                        { name: "ОДА и преабилитация", type: "brain" }
+                    ]
+                },
+                {
+                    name: "Тренер нового поколения",
+                    type: "trainer",
+                    block: "trainer",
+                    color: colors.trainer,
+                    desc: "Профессиональное развитие тренера",
+                    children: [
+                        {
+                            name: "ТНП 1: Основа",
+                            type: "trainer",
+                            color: colors.trainerLight,
+                            desc: "Клиенты, самопрезентация, нейроцентрический подход",
+                            children: [
+                                { name: "ТНП 2: Новый уровень понимания профессии", type: "trainer" },
+                                { name: "ТНП 3: Выгорание, целевая аудитория", type: "trainer" },
+                                { name: "Гири, инерционный тренинг", type: "trainer" },
+                                { name: "Силовой тренинг 2.0", type: "trainer" },
+                                { name: "Сила и гипертрофия", type: "trainer" },
+                                { name: "Women's Health", type: "trainer" },
+                                { name: "Men's Health", type: "trainer" },
+                                { name: "VPT: Vintage Person Training", type: "trainer" }
+                            ]
+                        },
+                        {
+                            name: "Лучшие техники стретчинга",
+                            type: "trainer",
+                            children: [
+                                { name: "Мобильность и проприоцепция", type: "trainer" },
+                                { name: "Суставная гимнастика", type: "trainer" }
+                            ]
+                        },
+                        {
+                            name: "Метаболический тренинг",
+                            type: "trainer",
+                            children: [
+                                { name: "Тренировка энергосистем", type: "trainer" },
+                                { name: "Функциональный тренинг", type: "trainer" },
+                                { name: "Подвесные системы", type: "trainer" }
+                            ]
+                        },
+                        {
+                            name: "Online программы",
+                            type: "trainer",
+                            children: [
+                                { name: "ТНП: Нейроцентрический подход", type: "trainer" },
+                                { name: "Дыхание", type: "trainer" },
+                                { name: "Подвесные системы", type: "trainer" },
+                                { name: "Боль в спине", type: "trainer" },
+                                { name: "Самостоятельные техники тейпирования", type: "trainer" }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+        
+        // D3 визуализация
+        let svg, g, tree, root, zoom;
+        let i = 0;
+        const container = document.getElementById('tree-container');
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        
+        function init() {
+            // SVG с градиентом
+            svg = d3.select('#tree-container').append('svg')
+                .attr('width', '100%')
+                .attr('height', '100%')
+                .attr('viewBox', `0 0 ${width} ${height}`);
+            
+            // Градиент для прогресса
+            const defs = svg.append('defs');
+            const gradient = defs.append('linearGradient')
+                .attr('id', 'gradient')
+                .attr('x1', '0%')
+                .attr('y1', '0%')
+                .attr('x2', '100%')
+                .attr('y2', '0%');
+            
+            gradient.append('stop').attr('offset', '0%').attr('stop-color', '#f59e0b');
+            gradient.append('stop').attr('offset', '50%').attr('stop-color', '#8b5cf6');
+            gradient.append('stop').attr('offset', '100%').attr('stop-color', '#10b981');
+            
+            // Zoom
+            zoom = d3.zoom()
+                .scaleExtent([0.2, 3])
+                .on('zoom', (e) => g.attr('transform', e.transform));
+            
+            svg.call(zoom);
+            
+            // Группа для дерева
+            g = svg.append('g')
+                .attr('transform', `translate(${width * 0.2}, ${height / 2})`);
+            
+            // Дерево
+            tree = d3.tree().nodeSize([50, 140]);
+            root = d3.hierarchy(treeData, d => d.children);
+            root.x0 = 0;
+            root.y0 = 0;
+            
+            // Свернуть всё кроме первого уровня
+            root.children.forEach(collapseLevel);
+            
+            update(root);
+            
+            // Центрировать
+            setTimeout(resetView, 100);
+        }
+        
+        function collapseLevel(d, depth = 0) {
+            if (d.children) {
+                if (depth >= 1) {
+                    d._children = d.children;
+                    d._children.forEach(child => collapseLevel(child, depth + 1));
+                    d.children = null;
+                } else {
+                    d.children.forEach(child => collapseLevel(child, depth + 1));
+                }
+            }
+        }
+        
+        function expand(d) {
+            if (d._children) {
+                d.children = d._children;
+                d._children = null;
+            }
+        }
+        
+        function update(source) {
+            const treeData = tree(root);
+            const nodes = treeData.descendants();
+            const links = treeData.links();
+            
+            nodes.forEach(d => d.y = d.depth * 160);
+            
+            // Узлы
+            const node = g.selectAll('g.node')
+                .data(nodes, d => d.id || (d.id = ++i));
+            
+            const nodeEnter = node.enter().append('g')
+                .attr('class', 'node')
+                .attr('transform', d => `translate(${source.y0},${source.x0})`)
+                .on('click', (e, d) => {
+                    toggle(d);
+                    tg.HapticFeedback?.impactOccurred('light');
+                })
+                .on('mouseover', showTooltip)
+                .on('mouseout', hideTooltip);
+            
+            // Круги с цветом блока
+            nodeEnter.append('circle')
+                .attr('r', 0)
+                .style('fill', d => {
+                    const c = d.data.color || colors[d.data.type] || colors.sub;
+                    return d._children ? c : 'var(--bg)';
+                })
+                .style('stroke', d => d.data.color || colors[d.data.type] || colors.sub)
+                .style('stroke-width', d => d.depth === 0 ? 3 : 2.5);
+            
+            // Текст
+            nodeEnter.append('text')
+                .attr('dy', '.35em')
+                .attr('x', d => d.children || d._children ? -15 : 15)
+                .attr('text-anchor', d => d.children || d._children ? 'end' : 'start')
+                .text(d => d.data.name)
+                .style('fill', d => {
+                    if (d.depth === 0) return colors.root;
+                    return d.data.color || colors[d.data.type] || colors.sub;
+                })
+                .style('font-size', d => {
+                    if (d.depth === 0) return '16px';
+                    if (d.depth === 1) return '14px';
+                    if (d.depth === 2) return '12px';
+                    return '10px';
+                })
+                .style('font-weight', d => d.depth <= 2 ? '700' : '500');
+            
+            // Обновление
+            const nodeUpdate = node.merge(nodeEnter).transition().duration(600)
+                .attr('transform', d => `translate(${d.y},${d.x})`);
+            
+            nodeUpdate.select('circle')
+                .attr('r', d => {
+                    if (d.depth === 0) return 12;
+                    if (d.depth === 1) return 10;
+                    return d._children ? 7 : 5;
+                })
+                .style('fill', d => {
+                    const c = d.data.color || colors[d.data.type] || colors.sub;
+                    return d._children ? c : 'var(--bg)';
+                });
+            
+            // Удаление
+            node.exit().transition().duration(600)
+                .attr('transform', d => `translate(${source.y},${source.x})`)
+                .remove()
+                .select('circle').attr('r', 0);
+            
+            // Связи с градиентом цвета
+            const link = g.selectAll('path.link')
+                .data(links, d => d.target.id);
+            
+            const linkEnter = link.enter().insert('path', 'g')
+                .attr('class', 'link')
+                .attr('d', d => {
+                    const o = {x: source.x0, y: source.y0};
+                    return diagonal(o, o);
+                })
+                .style('stroke', d => d.target.data.color || colors[d.target.data.type] || colors.sub);
+            
+            link.merge(linkEnter).transition().duration(600)
+                .attr('d', d => diagonal(d.source, d.target));
+            
+            link.exit().transition().duration(600)
+                .attr('d', d => {
+                    const o = {x: source.x, y: source.y};
+                    return diagonal(o, o);
+                })
+                .remove();
+        }
+        
+        function diagonal(s, d) {
+            return `M${s.y},${s.x}C${(s.y + d.y) / 2},${s.x} ${(s.y + d.y) / 2},${d.x} ${d.y},${d.x}`;
+        }
+        
+        function toggle(d) {
+            if (d.children) {
+                d._children = d.children;
+                d.children = null;
+            } else {
+                d.children = d._children;
+                d._children = null;
+            }
+            update(d);
+        }
+        
+        // Tooltip
+        const tooltip = document.getElementById('tooltip');
+        
+        function showTooltip(e, d) {
+            const title = tooltip.querySelector('.tooltip-title');
+            const desc = tooltip.querySelector('.tooltip-desc');
+            
+            title.textContent = d.data.name;
+            title.style.color = d.data.color || colors[d.data.type] || colors.sub;
+            desc.textContent = d.data.desc || `Уровень ${d.depth + 1} • ${getNodeCount(d)} семинаров`;
+            
+            tooltip.style.opacity = 1;
+            tooltip.style.left = Math.min(e.pageX + 15, window.innerWidth - 300) + 'px';
+            tooltip.style.top = Math.max(e.pageY - 50, 10) + 'px';
+        }
+        
+        function hideTooltip() {
+            tooltip.style.opacity = 0;
+        }
+        
+        function getNodeCount(d) {
+            let count = 0;
+            function countNodes(node) {
+                if (node.children) {
+                    node.children.forEach(countNodes);
+                } else if (node._children) {
+                    node._children.forEach(countNodes);
+                } else {
+                    count++;
+                }
+            }
+            if (d.children) d.children.forEach(countNodes);
+            else if (d._children) d._children.forEach(countNodes);
+            return count || 1;
+        }
+        
+        // Управление
+        function expandAll() {
+            function expandRecursive(d) {
+                if (d._children) {
+                    d.children = d._children;
+                    d._children = null;
+                }
+                if (d.children) d.children.forEach(expandRecursive);
+            }
+            expandRecursive(root);
+            update(root);
+            tg.HapticFeedback?.notificationOccurred('success');
+        }
+        
+        function collapseAll() {
+            function collapseRecursive(d, depth = 0) {
+                if (d.children) {
+                    if (depth >= 1) {
+                        d._children = d.children;
+                        d.children = null;
+                    } else {
+                        d.children.forEach(child => collapseRecursive(child, depth + 1));
+                    }
+                }
+            }
+            collapseRecursive(root);
+            update(root);
+            tg.HapticFeedback?.notificationOccurred('success');
+        }
+        
+        function resetView() {
+            const bounds = g.node().getBBox();
+            const fullWidth = width;
+            const fullHeight = height;
+            const midX = bounds.x + bounds.width / 2;
+            const midY = bounds.y + bounds.height / 2;
+            
+            const scale = 0.85;
+            const translate = [fullWidth / 2 - midX * scale, fullHeight / 2 - midY * scale];
+            
+            svg.transition().duration(750).call(
+                zoom.transform,
+                d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
+            );
+        }
+        
+        function focusBlock(blockType) {
+            // Активная кнопка
+            document.querySelectorAll('.legend-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.block === blockType);
+            });
+            
+            // Развернуть нужный блок, свернуть остальные
+            root.children.forEach(child => {
+                if (child.data.block === blockType) {
+                    expandRecursive(child);
+                } else {
+                    collapseRecursive(child);
+                }
+            });
+            
+            update(root);
+            
+            // Центрировать на блоке
+            setTimeout(() => {
+                const targetNode = root.children.find(c => c.data.block === blockType);
+                if (targetNode) {
+                    const scale = 1.2;
+                    const translate = [width / 2 - targetNode.y * scale, height / 2 - targetNode.x * scale];
+                    
+                    svg.transition().duration(800).call(
+                        zoom.transform,
+                        d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
+                    );
+                }
+            }, 300);
+            
+            tg.HapticFeedback?.impactOccurred('medium');
+        }
+        
+        function expandRecursive(d) {
+            if (d._children) {
+                d.children = d._children;
+                d._children = null;
+            }
+            if (d.children) d.children.forEach(expandRecursive);
+        }
+        
+        function collapseRecursive(d) {
+            if (d.children) {
+                d._children = d.children;
+                d.children = null;
+            }
+            if (d._children) d._children.forEach(collapseRecursive);
+        }
+        
+        // Инициализация
+        init();
+        
+        // Адаптация под размер
+        window.addEventListener('resize', () => {
+            location.reload();
+        });
+        
+        // Свайп для мобильных
+        let touchStartX = 0;
+        let touchStartY = 0;
+        
+        container.addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+        
+        container.addEventListener('touchend', e => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            const diffX = touchStartX - touchEndX;
+            const diffY = touchStartY - touchEndY;
+            
+            // Свайп влево/вправо для переключения блоков
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                const blocks = ['body', 'brain', 'trainer'];
+                const current = document.querySelector('.legend-item.active')?.dataset.block || 'all';
+                const currentIndex = blocks.indexOf(current);
+                
+                let nextIndex;
+                if (diffX > 0) {
+                    nextIndex = (currentIndex + 1) % blocks.length;
+                } else {
+                    nextIndex = currentIndex <= 0 ? blocks.length - 1 : currentIndex - 1;
+                }
+                
+                focusBlock(blocks[nextIndex]);
+            }
+        });
+    </script>
+</body>
+</html>
