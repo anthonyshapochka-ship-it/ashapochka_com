@@ -1,0 +1,88 @@
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import Command
+from aiogram.types import WebAppInfo, MenuButtonWebApp
+from aiogram.enums import ParseMode
+import asyncio
+
+BOT_TOKEN = "ВАШ_ТОКЕН_ОТ_@BOTFATHER"
+WEBAPP_URL = "https://ваш-ник.github.io/neurofitness-mindmap/"
+
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher()
+
+@dp.message(Command("start"))
+async def cmd_start(message: types.Message):
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=[
+        [types.InlineKeyboardButton(
+            text="🧠 Открыть интерактивную карту",
+            web_app=WebAppInfo(url=WEBAPP_URL)
+        )],
+        [
+            types.InlineKeyboardButton(text="📋 Тело", callback_data="block_body"),
+            types.InlineKeyboardButton(text="🧠 Мозг", callback_data="block_brain")
+        ],
+        [
+            types.InlineKeyboardButton(text="👨‍🏫 Тренер", callback_data="block_trainer"),
+            types.InlineKeyboardButton(text="❓ Помощь", callback_data="help")
+        ]
+    ])
+    
+    await message.answer(
+        "🎯 <b>NeuroFitness Mindmap</b>\n\n"
+        "Интерактивная карта всех семинаров и курсов.\n\n"
+        "<b>Три основных блока:</b>\n"
+        "🟠 <b>Квест по телу</b> — фасция, анатомия, мобильность\n"
+        "🟣 <b>Квест по мозгу</b> — нейрофитнес, нейроскрининг\n"
+        "🟢 <b>Тренер нового поколения</b> — профессиональное развитие\n\n"
+        "Нажмите кнопку ниже для запуска приложения 👇",
+        parse_mode=ParseMode.HTML,
+        reply_markup=keyboard
+    )
+
+@dp.callback_query(F.data.startswith("block_"))
+async def block_callback(callback: types.CallbackQuery):
+    block = callback.data.split("_")[1]
+    names = {
+        "body": ("🟠 Квест по телу", "Фасция, топография, мобильность, тейпирование"),
+        "brain": ("🟣 Квест по мозгу", "Нейрофитнес, вестибулярка, гимнастика 2.0"),
+        "trainer": ("🟢 Тренер нового поколения", "Профессия, силовой тренинг, здоровье")
+    }
+    name, desc = names.get(block, ("Блок", "Описание"))
+    
+    await callback.message.edit_text(
+        f"{name}\n\n{desc}\n\nОткройте mindmap для просмотра структуры:",
+        reply_markup=types.InlineKeyboardMarkup(inline_keyboard=[
+            [types.InlineKeyboardButton(
+                text="🧠 Открыть карту", 
+                web_app=WebAppInfo(url=WEBAPP_URL)
+            )],
+            [types.InlineKeyboardButton(text="◀️ Назад", callback_data="back")]
+        ])
+    )
+
+@dp.callback_query(F.data == "back")
+async def back_callback(callback: types.CallbackQuery):
+    await cmd_start(callback.message)
+
+@dp.callback_query(F.data == "help")
+async def help_callback(callback: types.CallbackQuery):
+    await callback.answer(
+        "Управление в приложении:\n"
+        "• Тап по кругу — развернуть/свернуть\n"
+        "• Пинч — зум\n"
+        "• Свайп — перемещение\n"
+        "• Кнопки снизу — быстрый фильтр",
+        show_alert=True
+    )
+
+async def main():
+    await bot.set_chat_menu_button(
+        menu_button=MenuButtonWebApp(
+            text="🧠 Mindmap",
+            web_app=WebAppInfo(url=WEBAPP_URL)
+        )
+    )
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
